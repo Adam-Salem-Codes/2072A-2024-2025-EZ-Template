@@ -1,7 +1,7 @@
 {
   "py/object": "pros.conductor.project.Project",
   "py/state": {
-    "project_name": "EZ-Template-Example",
+    "project_name": "2072A",
     "target": "v5",
     "templates": {
       "EZ-Template": {
@@ -421,8 +421,9 @@
       }
     },
     "upload_options": {
-      "description": "making code ez",
-      "after": "run"
+      "description": "2072A Ares EZ-Template",
+      "after": "run",
+      "icon": "X"
     },
     "use_early_access": false
   }

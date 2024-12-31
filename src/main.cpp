@@ -17,12 +17,14 @@ ez::Drive chassis(
 
 // pros::Motor l_lift(-14);
 // pros::Motor r_lift(17);
-pros::Motor intake(10);
+pros::Motor intake_down(15);
+pros::Motor intake_up(10);
 pros::Optical color_sensor(5);
 pros::Distance front_distance(6);
 pros::Rotation lift(12);
 ez::Piston mogo('a');
 ez::Piston swiper('b');
+ez::Piston doinker('f');
 ez::Piston intake_lift('h');
 
 pros::MotorGroup lady_brown({-14, 17}, pros::MotorGears::rpm_200, pros::MotorEncoderUnits::counts);
@@ -32,13 +34,14 @@ pros::MotorGroup lady_brown({-14, 17}, pros::MotorGears::rpm_200, pros::MotorEnc
 //}
 ez::PID liftPID{0.45, 0, 0, 0, "Lift"};
 pros::Distance clamp_sensor(1);
-// vector<jas::motors::motordata> motorbar{
-//     {0, intake, "intake 1"},
-// };
+vector<jas::motors::motordata> motorbar{
+     {0, intake_up, "intake 1"},
+ };
+
 
 int auto_clamp_task() {
   while (true) {
-    if (clamp_sensor.get_distance() <= 25) {
+    if (clamp_sensor.get_distance() <= 25 && pros::competition::is_autonomous()) {
       pros::delay(250);
       // toggle clamp
       mogo.set(true);
@@ -51,10 +54,10 @@ int auto_clamp_task() {
 }
 int intake_torque_task() {
   while (true) {
-    if (intake.get_torque() > 1.0 && intake.get_power() < 10.0) {  // Check if intake torque exceeds 1.0 Nm and power is below 10 Watts
-      intake.move(127);                                            // Reverse the intake
+    if (intake_up.get_torque() > 1.0 && intake_up.get_power() < 10.0 && pros::competition::is_autonomous()) {  // Check if intake torque exceeds 1.0 Nm and power is below 10 Watts
+      intake_up.move(127);                                            // Reverse the intake
       pros::delay(500);                                            // Wait for 0.5 seconds
-      intake.move(-127);                                           // Stop the intake
+      intake_up.move(-127);                                           // Stop the intake
     }
     pros::delay(10);  // Delay to prevent task from running too frequently
   }
@@ -123,11 +126,11 @@ int color_sensor_task() {
   while (true) {
     if (
         (racism_against_blue && (color_sensor.get_hue() >= 180 && color_sensor.get_hue() <= 270)) ||
-        (!racism_against_blue && (color_sensor.get_hue() >= 0 && color_sensor.get_hue() <= 25))) {
+        (!racism_against_blue && (color_sensor.get_hue() >= 0 && color_sensor.get_hue() <= 25)) && pros::competition::is_autonomous()) {
       pros::delay(100);
-      intake.move(50);
+      intake_up.move(50);
       pros::delay(300);
-      intake.move(-127);
+      intake_up.move(-127);
     }
   }
 }
@@ -143,91 +146,146 @@ void initialize() {
   // l_lift.set_encoder_units(pros::MotorEncoderUnits::degrees);
   lift.reset();
   lift.reset_position();
-  /*j_auton_selector.jautonpopulate(
-      {jas::jasauton(drive_example, 1, 1, "Blue 50% WP", "Blue 2 ring in positive corner", 2, 0, false),
-       jas::jasauton(drive_example, 1, 2, "Blue test auton", "Testing for blue autons", 0, 0, false),
+  j_auton_selector.jautonpopulate(
+      { jas::jasauton([](){
 
-       jas::jasauton(drive_example, 0, 1, "Red 50% WP", "Red 2 ring in positive corner", 2, 0, false),
-       jas::jasauton(drive_example, 0, 2, "Red test auton", "Testing for red autons", 0, 0, false),
+        
+        chassis.pid_drive_set(60, 110, true);
+        chassis.pid_wait();
+        chassis.pid_turn_relative_set(90_deg, 120, false);
+        chassis.pid_wait_quick();
+        chassis.pid_turn_relative_set(45_deg, 120, false);
+        chassis.pid_wait();
+        chassis.pid_turn_relative_set(-135_deg, 120, false);
+        chassis.pid_wait();
+        chassis.pid_drive_set(-54, 110, true);
+        chassis.pid_wait();
+        chassis.pid_drive_set(-6, 110, true);
+        chassis.pid_wait();
 
-       jas::jasauton(drive_example, 1, 0, "Blue 4 ring no WP", "Blue 4 ring in negative corner", 4, 0, false),
-       jas::jasauton(drive_example, 1, 0, "Blue 4 ring WP", "Blue 3 ring in negative corner + 1 ring on alliance", 3, 0, true),
-       jas::jasauton(drive_example, 1, 0, "Blue 6 ring no WP", "Blue 6 ring in negative corner", 6, 0, false),
+        pros::delay(100000);
 
-       jas::jasauton(drive_example, 0, 0, "Red 4 ring no WP", "Red 4 ring in negative corner", 4, 0, false),
-       jas::jasauton(drive_example, 0, 0, "Red 4 ring WP", "Red 3 ring in negative corner + 1 ring on alliance", 3, 0, true),
-       jas::jasauton(drive_example, 0, 0, "Red 6 ring no WP", "Red 6 ring in negative corner", 6, 0, false),
-       jas::jasauton(drive_example, 0, 2, "Old skills auton", "Unfinished, inconsistent skills auton", 6, 6, true),
-       jas::jasauton(drive_example, 0, 2, "New skills auton", "Potential 50 pt skills auton- does not work yet, takes too long", 5, 6, true),
+        intake_up.move(-127);
+        intake_down.move(127);
 
-       jas::jasauton(drive_example, 2, 2, "Move forward", "Drive straight forward", 0, 0, false)});*/
-  // Configure your chassis controls
-  chassis.opcontrol_curve_buttons_toggle(true);  // Enables modifying the controller curve with buttons on the joysticks
-  chassis.opcontrol_drive_activebrake_set(0);    // Sets the active brake kP. We recommend ~2.  0 will disable.
-  chassis.opcontrol_curve_default_set(0, 0);     // Defaults for curve. If using tank, only the first parameter is used. (Comment this line out if you have an SD card!)
-  // Set the drive to your own constants from autons.cpp!
-  default_constants();
+        chassis.pid_drive_set(-36, 127, false);  // Move the majority of the distance to the mogo
+        chassis.pid_wait_quick_chain();
+        chassis.pid_drive_set(-8.5_in, 35, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait_quick();
 
-  // These are already defaulted to these buttons, but you can change the left/right curve buttons here!
-  // chassis.opcontrol_curve_buttons_left_set(pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT);  // If using tank, only the left side is used.
-  // chassis.opcontrol_curve_buttons_right_set(pros::E_CONTROLLER_DIGITAL_Y, pros::E_CONTROLLER_DIGITAL_A);
+        mogo.set(true);
+        chassis.pid_turn_relative_set(45, 90, false);
+        intake_up.move(-127);
+        intake_down.move(127);
+        lady_brown.move_absolute((1875 / 3), 150);
+        chassis.pid_wait();
+        chassis.pid_drive_set(12, 80, false);
+        chassis.pid_wait();
 
-  // Autonomous Selector using LLEMU
-  ez::as::auton_selector.autons_add({
-      Auton("Blue Negative \n Gets 1 blue on alliance stake \n Gets 3 on mogo", []() {
-        // ZACH: If we want the auton faster we can turn off slew (accelerations)
-        racism_against_blue = false;
+        pros::delay(1000);
+
+        pros::delay(5000);
+        chassis.pid_drive_set(-12, 127, true);
+        chassis.pid_wait();
+        pros::delay(10000);
+       }, 2, 2, "PID Tuning", "Elims Wall Stake", 1, 1, false),
+        
+        jas::jasauton([]() {
+ racism_against_blue = false;
         chassis.drive_brake_set(pros::E_MOTOR_BRAKE_HOLD);
         lady_brown.set_zero_position_all(0);
 
         lady_brown.move_absolute(1900, 200);
         pros::delay(850);
         lady_brown.move_absolute(50, 200);
-        chassis.pid_drive_set(-12_in, 127, false);  // Move away from wall after alliance stake score
+        chassis.pid_drive_set(-11_in, 127, false);  // Move away from wall after alliance stake score
         chassis.pid_wait_quick();                   // Quick chain into the turn
         chassis.pid_turn_set(-80, 127, false);      // Turn to mogo
         chassis.pid_wait_quick();
-        chassis.pid_drive_set(-30_in, 127, false);  // Move the majority of the distance to the mogo
+        chassis.pid_drive_set(-20_in, 100, false);  // Move the majority of the distance to the mogo
         chassis.pid_wait_quick_chain();
         // TODO: CURRENTLY THIS IS PRESET BUT IN THE FUTURE MAKE IT GO BACK UNTIL THE AUTO CLAMP ACTIVATES.
-        chassis.pid_drive_set(-6_in, 90, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_drive_set(-16_in, 60, true);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait_quick();
+        toggle(mogo);
         chassis.pid_turn_set(-170, 110, false);  // Turn to ring stack
         chassis.pid_wait_quick();
-        intake.move(-127);                         // Start intake before running into ring stack
-        chassis.pid_drive_set(23_in, 127, false);  // Move to ring stack
-        chassis.pid_wait_quick_chain();
-        pros::delay(325);                              // WAIT FOR RING TO GET INTO INTAKE
-        intake.move(0);                                // Stop intake to avoid intaking red one when  going towards the wall to line up
-        move_to_distance_from_wall(14, 90);            // Move 14" away from the wall to align for two rings
-        chassis.pid_wait_quick();                      // Wait for move_to_distance_from_wall to finish
+        intake_up.move(-127); 
+        intake_down.move(127);                        // Start intake_up before running into ring stack
+        chassis.pid_drive_set(25_in, 80, true);            // Move 18" away from the wall to align for two rings
+        chassis.pid_wait(); 
+        if((color_sensor.get_hue() >= 200 && color_sensor.get_hue() <= 220)) pros::delay(500);                          // WAIT FOR RING TO GET INTO INTAKE
+        intake_up.move(0); 
+        intake_down.move(0);                               // Stop intake_up to avoid intaking red one when  going towards the wall to line up
+                             // Wait for move_to_distance_from_wall to finish
         chassis.pid_turn_relative_set(-85, 90, true);  // Turn to ring stack
         chassis.pid_wait();
-        intake.move(-127);                       // Move intake for the rest of the auton
+        intake_up.move(-127);    
+        intake_down.move(127);                   // Move intake_up for the rest of the auton
         toggle(swiper);                          // Swiper down
-        pros::delay(200);                        // Wait for swiper to settle down
-        chassis.pid_drive_set(14_in, 40, true);  // Get rings
+        pros::delay(400);                        // Wait for swiper to settle down
+        chassis.pid_drive_set(14_in, 30, true);  // Get rings
         chassis.pid_wait_quick_chain();
-        chassis.pid_drive_set(-15_in, 80, true);  // Drag them back
+        chassis.pid_drive_set(-15_in, 60, true);  // Drag them back
         chassis.pid_wait();
-        chassis.pid_turn_relative_set(-90, 40, true);  // Turn them away from the left behind red ring and the bar
+        chassis.pid_turn_relative_set(-65, 40, true);  // Turn them away from the left behind red ring and the bar
         chassis.pid_wait();
-        toggle(swiper);  // Swiper up to intake them
-        chassis.pid_turn_relative_set(15, 90, true);
-        chassis.pid_wait_quick_chain();
-        // Move around to intake rings
-        chassis.pid_drive_set(10_in, 60, true);
-        chassis.pid_wait_quick_chain();
-        chassis.pid_turn_relative_set(15, 60, false);
-        chassis.pid_wait_quick_chain();
-        // Move around to intake rings
-        chassis.pid_drive_set(19_in, 127, true);  // Goto bar
+        swiper.set(false);  // Swiper up to intake_up them
+        // Move around to intake_up rings
+        chassis.pid_drive_set(32_in, 60, false);
         chassis.pid_wait();
-        pros::delay(350);  // Make sure the intake finishes scoring.
-        intake.move(0);
-        // swiper.set(!swiper.get());
-      }),
-      Auton("Goal Rush AWP", []() {
+        pros::delay(350);  // Make sure the intake_up finishes scoring.
+        intake_up.move(0);
+        intake_down.move(0);
+      }, 1, 0, "Blue Negative AWP", "Blue 3 rings + Alliance", 3, 0, false),
+
+        jas::jasauton([]() {
+        racism_against_blue = true;
+        chassis.drive_brake_set(pros::E_MOTOR_BRAKE_HOLD);
+        lady_brown.set_zero_position_all(0);
+
+        lady_brown.move_absolute(1900, 200);
+        pros::delay(850);
+        lady_brown.move_absolute(50, 200);
+        chassis.pid_drive_set(-9_in, 127, false);  // Move away from wall after alliance stake score
+        chassis.pid_wait_quick();                   // Quick chain into the turn
+        chassis.pid_turn_set(80, 127, false);      // Turn to mogo
+        chassis.pid_wait_quick();
+        chassis.pid_drive_set(-20_in, 100, false);  // Move the majority of the distance to the mogo
+        chassis.pid_wait_quick_chain();
+        // TODO: CURRENTLY THIS IS PRESET BUT IN THE FUTURE MAKE IT GO BACK UNTIL THE AUTO CLAMP ACTIVATES.
+        chassis.pid_drive_set(-14_in, 60, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait_quick();
+        toggle(mogo);
+        chassis.pid_turn_set(160, 110, false);  // Turn to ring stack
+        chassis.pid_wait_quick();
+        intake_up.move(-127);                         // Start intake_up before running into ring stack
+        chassis.pid_drive_set(25_in, 80, true);            // Move 18" away from the wall to align for two rings
+        chassis.pid_wait(); 
+        if((color_sensor.get_hue() >= 200 && color_sensor.get_hue() <= 220)) pros::delay(500);                          // WAIT FOR RING TO GET INTO INTAKE
+        intake_up.move(0);                                // Stop intake_up to avoid intaking red one when  going towards the wall to line up
+                             // Wait for move_to_distance_from_wall to finish
+        chassis.pid_turn_relative_set(95, 90, true);  // Turn to ring stack
+        chassis.pid_wait();
+        intake_up.move(-127);                       // Move intake_up for the rest of the auton
+        toggle(swiper);                          // Swiper down
+        pros::delay(400);                        // Wait for swiper to settle down
+        chassis.pid_drive_set(14_in, 30, true);  // Get rings
+        chassis.pid_wait_quick_chain();
+        chassis.pid_drive_set(-15_in, 60, true);  // Drag them back
+        chassis.pid_wait();
+        chassis.pid_turn_relative_set(65, 40, true);  // Turn them away from the left behind red ring and the bar
+        chassis.pid_wait();
+        swiper.set(false);  // Swiper up to intake_up them
+        // Move around to intake_up rings
+        chassis.pid_drive_set(32_in, 60, false);
+        chassis.pid_wait();
+        pros::delay(350);  // Make sure the intake_up finishes scoring.
+        intake_up.move(0);
+      }, 0, 0, "Red Negative AWP", "Red 3 rings + Alliance", 3, 0, true),
+
+
+       jas::jasauton([](){
         chassis.pid_drive_set(-(3 * 12), 127, false);  // Move the majority of the distance to the mogo
         chassis.pid_wait_quick_chain();
         chassis.pid_drive_set(-8.5_in, 35, true);  // Slow down before reaching the mobile goal to clamp correctly.
@@ -235,14 +293,14 @@ void initialize() {
 
         mogo.set(true);
         chassis.pid_turn_relative_set(45, 90, false);
-        intake.move(-127);
+        intake_up.move(-127);
         lady_brown.move_absolute((1875 / 3), 150);
         chassis.pid_wait();
         chassis.pid_drive_set(12, 80, false);
         chassis.pid_wait();
 
         pros::delay(1000);
-        intake.move(0);
+        intake_up.move(0);
         toggle(mogo);
         chassis.pid_turn_set(110, 90, false);
         chassis.pid_wait();
@@ -252,7 +310,7 @@ void initialize() {
         chassis.pid_turn_set(-25, 90, false);
         chassis.pid_wait_quick();
         intake_lift.set(!intake_lift.get());
-        intake.move(-127);
+        intake_up.move(-127);
         chassis.pid_drive_set(30_in, 80, true);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait_quick();
 
@@ -263,7 +321,7 @@ void initialize() {
         chassis.pid_wait_quick_chain();
         chassis.pid_drive_set(6_in, 25, true);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait_quick_chain();
-        intake.move(0);
+        intake_up.move(0);
         chassis.pid_turn_relative_set(35, 90, false);
         chassis.pid_wait();
         chassis.pid_drive_set(10_in, 80, true);  // Slow down before reaching the mobile goal to clamp correctly.
@@ -273,33 +331,34 @@ void initialize() {
         chassis.pid_drive_set(-12, 127, true);
         chassis.pid_wait();
         pros::delay(10000);
-      }),
-      Auton("ELIMS GOAL RUSH ", []() {
+       }, 1, 1, "Goal rush AWP", "Testing for blue autons", 1, 1, true),
+
+              jas::jasauton([](){
         chassis.pid_drive_set(-(3 * 12), 127, false);  // Move the majority of the distance to the mogo
         chassis.pid_wait_quick_chain();
         chassis.pid_drive_set(-8.5_in, 35, true);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait_quick();
 
         mogo.set(true);
-        chassis.pid_turn_relative_set(45, 90, false);
-        intake.move(-127);
+        chassis.pid_turn_relative_set(-45, 90, false);
+        intake_up.move(-127);
         lady_brown.move_absolute((1875 / 3), 150);
         chassis.pid_wait();
         chassis.pid_drive_set(12, 80, false);
         chassis.pid_wait();
 
         pros::delay(1000);
-        intake.move(0);
+        intake_up.move(0);
         toggle(mogo);
-        chassis.pid_turn_set(110, 90, false);
+        chassis.pid_turn_set(-110, 90, false);
         chassis.pid_wait();
         chassis.pid_drive_set(-20_in, 50, true);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait();
         mogo.set(true);
-        chassis.pid_turn_set(-25, 90, false);
+        chassis.pid_turn_set(25, 90, false);
         chassis.pid_wait_quick();
         intake_lift.set(!intake_lift.get());
-        intake.move(-127);
+        intake_up.move(-127);
         chassis.pid_drive_set(30_in, 80, true);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait_quick();
 
@@ -310,7 +369,55 @@ void initialize() {
         chassis.pid_wait_quick_chain();
         chassis.pid_drive_set(6_in, 25, true);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait_quick_chain();
-        intake.move(0);
+        intake_up.move(0);
+        chassis.pid_turn_relative_set(-35, 90, false);
+        chassis.pid_wait();
+        chassis.pid_drive_set(10_in, 80, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait();
+        lady_brown.move_absolute(1875, 200);
+        pros::delay(500);
+        chassis.pid_drive_set(-12, 127, true);
+        chassis.pid_wait();
+        pros::delay(10000);
+       }, 0, 1, "Goal rush AWP", "Testing for red autons", 1, 1, true),
+
+       jas::jasauton([](){
+         chassis.pid_drive_set(-(3 * 12), 127, false);  // Move the majority of the distance to the mogo
+        chassis.pid_wait_quick_chain();
+        chassis.pid_drive_set(-8.5_in, 35, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait_quick();
+
+        mogo.set(true);
+        chassis.pid_turn_relative_set(45, 90, false);
+        intake_up.move(-127);
+        lady_brown.move_absolute((1875 / 3), 150);
+        chassis.pid_wait();
+        chassis.pid_drive_set(12, 80, false);
+        chassis.pid_wait();
+
+        pros::delay(1000);
+        intake_up.move(0);
+        toggle(mogo);
+        chassis.pid_turn_set(110, 90, false);
+        chassis.pid_wait();
+        chassis.pid_drive_set(-20_in, 50, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait();
+        mogo.set(true);
+        chassis.pid_turn_set(-25, 90, false);
+        chassis.pid_wait_quick();
+        intake_lift.set(!intake_lift.get());
+        intake_up.move(-127);
+        chassis.pid_drive_set(30_in, 80, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait_quick();
+
+        chassis.pid_drive_set(-8_in, 25, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait_quick_chain();
+        intake_lift.set(!intake_lift.get());
+        chassis.pid_drive_set(6_in, 25, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait_quick_chain();
+        chassis.pid_drive_set(6_in, 25, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait_quick_chain();
+        intake_up.move(0);
         chassis.pid_turn_relative_set(165, 90, false);
         chassis.pid_wait();
         chassis.pid_drive_set(65_in, 80, true);  // Slow down before reaching the mobile goal to clamp correctly.
@@ -328,12 +435,68 @@ void initialize() {
         chassis.pid_drive_set(-12, 127, true);
         chassis.pid_wait();
         pros::delay(10000);
-      }),
+       }, 1, 1, "Goal Rush Elims", "Elims Wall Stake", 1, 1, false),
 
-      Auton("Skeeeeells", []() {
-        intake.move(-127);
+      jas::jasauton([](){
+        chassis.pid_drive_set(-(3 * 12), 127, false);  // Move the majority of the distance to the mogo
+        chassis.pid_wait_quick_chain();
+        chassis.pid_drive_set(-8.5_in, 35, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait_quick();
+
+        mogo.set(true);
+        chassis.pid_turn_relative_set(-45, 90, false);
+        intake_up.move(-127);
+        lady_brown.move_absolute((1875 / 3), 150);
+        chassis.pid_wait();
+        chassis.pid_drive_set(12, 80, false);
+        chassis.pid_wait();
+
+        pros::delay(1000);
+        intake_up.move(0);
+        toggle(mogo);
+        chassis.pid_turn_set(130, 90, false);
+        chassis.pid_wait();
+        chassis.pid_drive_set(-20_in, 50, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait();
+        mogo.set(true);
+        chassis.pid_turn_set(-15, 90, false);
+        chassis.pid_wait_quick();
+        intake_lift.set(!intake_lift.get());
+        intake_up.move(-127);
+        chassis.pid_drive_set(30_in, 80, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait_quick();
+
+        chassis.pid_drive_set(-8_in, 25, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait_quick_chain();
+        intake_lift.set(!intake_lift.get());
+        chassis.pid_drive_set(6_in, 25, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait_quick_chain();
+        chassis.pid_drive_set(6_in, 25, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait_quick_chain();
+        intake_up.move(0);
+        chassis.pid_turn_relative_set(-165, 90, false);
+        chassis.pid_wait();
+        chassis.pid_drive_set(65_in, 80, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait();
+        lady_brown.move_absolute(1775, 200);
+        chassis.pid_turn_relative_set(-20, 90, false);
+        chassis.pid_drive_set(5_in, 80, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait();
+        chassis.pid_turn_relative_set(15, 90, false);
+        chassis.pid_wait();
+        chassis.pid_turn_relative_set(-15, 90, false);
+        chassis.pid_wait();
+
+        pros::delay(5000);
+        chassis.pid_drive_set(-12, 127, true);
+        chassis.pid_wait();
+        pros::delay(10000);
+       }, 0, 1, "Goal Rush Elims", "Elims Wall Stake", 1, 1, false),
+
+      jas::jasauton([]() {
+        intake_up.move(-127);
         pros::delay(500);
-        intake.move(0);
+        intake_up.move(0);
         chassis.pid_drive_set(12_in, 80, true);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait();
         chassis.pid_turn_relative_set(-90, 90, false);
@@ -343,7 +506,7 @@ void initialize() {
         mogo.set(true);
         chassis.pid_turn_relative_set(90, 90, false);
         chassis.pid_wait();
-        intake.move(-127);
+        intake_up.move(-127);
         chassis.pid_drive_set(26_in, 80, true);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait();
         chassis.pid_turn_relative_set(90, 90, false);
@@ -365,7 +528,7 @@ void initialize() {
         chassis.pid_turn_relative_set(-45, 90, false);
         chassis.pid_wait();
         pros::delay(1000);
-        intake.move(0);
+        intake_up.move(0);
         mogo.set(false);
         chassis.pid_drive_set(-20_in, 80, true);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait();
@@ -376,20 +539,22 @@ void initialize() {
         chassis.pid_drive_set(-84_in, 80, true);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait();
         mogo.set(true);
-      }),
-      Auton("Drive and Turn\n\nSlow down during drive.", wait_until_change_speed),
-      Auton("Swing Example\n\nSwing in an 'S' curve", swing_example),
-      Auton("Motion Chaining\n\nDrive forward, turn, and come back, but blend everything together :D", motion_chaining),
-      Auton("Combine all 3 movements", combining_movements),
-      Auton("Interference\n\nAfter driving forward, robot performs differently if interfered or not.", interfered_example),
-  });
+       }, 0, 1, "Skills", "Skills", 2, 0, false)});
+  // Configure your chassis controls
+  chassis.opcontrol_curve_buttons_toggle(true);  // Enables modifying the controller curve with buttons on the joysticks
+  chassis.opcontrol_drive_activebrake_set(0);    // Sets the active brake kP. We recommend ~2.  0 will disable.
+  chassis.opcontrol_curve_default_set(0, 0);     // Defaults for curve. If using tank, only the first parameter is used. (Comment this line out if you have an SD card!)
+  // Set the drive to your own constants from autons.cpp!
+  default_constants();
 
-  // Initialize chassis and auton selector
+  // These are already defaulted to these buttons, but you can change the left/right curve buttons here!
+  // chassis.opcontrol_curve_buttons_left_set(pros::E_CONTROLLER_DIGITAL_LEFT, pros::E_CONTROLLER_DIGITAL_RIGHT);  // If using tank, only the left side is used.
+  // chassis.opcontrol_curve_buttons_right_set(pros::E_CONTROLLER_DIGITAL_Y, pros::E_CONTROLLER_DIGITAL_A);
   chassis.initialize();
-  ez::as::initialize();
-  // pros::Task tempcheckcontroller(tempcheckctrl);
-  // screeninit();
-  // tempcheck();
+ // ez::as::initialize();
+   pros::Task tempcheckcontroller(tempcheckctrl);
+   screeninit();
+   tempcheck();
 }
 /**
  * Runs while the robot is in the disabled state of Field Management System or
@@ -432,7 +597,8 @@ void autonomous() {
   pros::Task t(auto_clamp_task);
   pros::Task t1(color_sensor_task);
   // pros::Task t2(intake_torque_task);
-  ez::as::auton_selector.selected_auton_call();  // Calls selected auton from autonomous selector
+  // ez::as::auton_selector.selected_auton_call();  // Calls selected auton from autonomous selector
+  jautonrun();
 }
 
 /**
@@ -457,6 +623,11 @@ void opcontrol() {
   // r_lift.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
   while (true) {
     color_sensor.set_led_pwm(100);
+            if(lv_obj_get_parent(pageswitch) == motortemps) {
+            for(int m = 0; m < motorbar.size(); m++) {
+                lv_event_send(motorboxes[m], LV_EVENT_REFRESH, NULL);
+            }
+        }
     // PID Tuner
     // After you find values that you're happy with, you'll have to set them in auton.cpp
     if (!pros::competition::is_connected()) {
@@ -464,43 +635,6 @@ void opcontrol() {
       //  When enabled:
       //  * use A and Y to increment / decrement the constants
       //  * use the arrow keys to navigate the constants
-      if (master.get_digital_new_press(DIGITAL_X))
-        chassis.pid_tuner_toggle();
-      if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_L2)) {
-        if (lift_prime == 1) {
-          lift_prime = 2;
-          lady_brown.set_brake_mode_all(MOTOR_BRAKE_HOLD);
-          lady_brown.move_absolute(350, 200);
-        } else if (lift_prime == 2) {
-          lift_prime = 3;
-          lady_brown.move_absolute(1875, 200);
-        } else {
-          lift_prime = 1;
-          lady_brown.set_brake_mode_all(MOTOR_BRAKE_COAST);
-          lady_brown.move_absolute(0, 200);
-        }
-      }
-      if (master.get_digital(DIGITAL_DOWN)) {
-        intake.move(127);
-      } else if (master.get_digital(DIGITAL_R2)) {
-        if (
-            (racism_against_blue && (color_sensor.get_hue() >= 200 && color_sensor.get_hue() <= 220)) ||
-            (!racism_against_blue && (color_sensor.get_hue() >= 0 && color_sensor.get_hue() <= 20))) {
-          intake.move(50);
-          pros::delay(300);
-          intake.move(-127);
-        } else
-          intake.move(-127);
-
-      } else
-        intake.move(0);
-
-      if (master.get_digital_new_press(DIGITAL_R1))
-        mogo.set(!mogo.get());
-      if (master.get_digital_new_press(DIGITAL_UP))
-        swiper.set(!swiper.get());
-      if (master.get_digital_new_press(DIGITAL_B))
-        intake_lift.set(!intake_lift.get());
       // set_lift(liftPID.compute((lift.get_angle() / 100.0)));
 
       // Trigger the selected autonomous routine
@@ -508,9 +642,53 @@ void opcontrol() {
         autonomous();
         chassis.drive_brake_set(driver_preference_brake);
       }
-
+    if (master.get_digital_new_press(DIGITAL_X))
+        chassis.pid_tuner_toggle();
       chassis.pid_tuner_iterate();  // Allow PID Tuner to iterate
     }
+      if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_L2)) {
+        if (lift_prime == 1) {
+          lift_prime = 2;
+          lady_brown.tare_position_all();
+          lady_brown.set_brake_mode_all(MOTOR_BRAKE_HOLD);
+          lady_brown.move_absolute(300, 200);
+        } else if (lift_prime == 2) {
+          lift_prime = 3;
+          lady_brown.move_absolute(1700, 200);
+        } else {
+          lift_prime = 1;
+          lady_brown.set_brake_mode_all(MOTOR_BRAKE_COAST);
+          lady_brown.move_absolute(0, 200);
+        }
+      }
+
+      if (master.get_digital_new_press(DIGITAL_R1))
+        mogo.set(!mogo.get());
+      if (master.get_digital_new_press(DIGITAL_UP))
+        swiper.set(!swiper.get());
+      if (master.get_digital_new_press(DIGITAL_B))
+        doinker.set(!doinker.get());
+      if (master.get_digital_new_press(DIGITAL_Y))
+        intake_lift.set(!intake_lift.get());
+      if (master.get_digital_new_press(DIGITAL_A))
+      {
+        lady_brown.move(-10);
+        pros::delay(500);
+        lady_brown.tare_position_all();
+      }
+      if (master.get_digital(DIGITAL_LEFT)) {
+        intake_down.move(-127);
+      }
+      if (master.get_digital(DIGITAL_DOWN)) {
+        intake_up.move(127);
+        intake_down.move(-127);
+      } else if (master.get_digital(DIGITAL_R2)) {
+        intake_down.move(127);
+        intake_up.move(-127);
+      } else {
+        intake_up.move(0);
+        intake_down.move(0);
+      }
     // if (lv_obj_get_parent(pageswitch) == motortemps) {
     //   for (int m = 0; m < motorbar.size(); m++) {
     //     lv_event_send(motorboxes[m], LV_EVENT_REFRESH, NULL);
