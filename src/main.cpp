@@ -114,7 +114,7 @@ void move_until_clamped(int speed) {
  */
 void move_until_clamped(int speed, int lower_speed, int distance) {
   chassis.pid_drive_set(distance, speed, false);  // Drive for a certain distance at higher speed
-  chassis.pid_wait_quick_chain();                 // Motion chain into slower speed
+  chassis.pid_wait();                 // Motion chain into slower speed
   while (!mogo.get()) {
     chassis.drive_set(lower_speed, lower_speed);  // Go at a lower speed until clamp extends.
     pros::delay(10);
@@ -149,19 +149,32 @@ void initialize() {
   j_auton_selector.jautonpopulate(
       { jas::jasauton([](){
 
-        
-        chassis.pid_drive_set(60, 110, true);
+        chassis.pid_turn_relative_set(90_deg, 120, false);
+        chassis.pid_wait();
+        chassis.pid_drive_set(24, 110, true);
+        chassis.pid_wait();
+        chassis.pid_turn_relative_set(-135_deg, 120, false);
+        chassis.pid_wait();
+        chassis.pid_drive_set(34, 110, true);
+        chassis.pid_wait();
+        chassis.pid_turn_relative_set(45_deg, 120, false);
+        chassis.pid_wait();
+        chassis.pid_drive_set(-24, 110, true);
+        chassis.pid_wait();
+        pros::delay(100000);
+        chassis.pid_drive_set(24, 110, true);
+        chassis.pid_wait();
+        chassis.pid_drive_set(-18, 110, true);
+        chassis.pid_wait();
+        chassis.pid_drive_set(-6, 110, true);
         chassis.pid_wait();
         chassis.pid_turn_relative_set(90_deg, 120, false);
-        chassis.pid_wait_quick();
+        chassis.pid_wait();
         chassis.pid_turn_relative_set(45_deg, 120, false);
         chassis.pid_wait();
         chassis.pid_turn_relative_set(-135_deg, 120, false);
         chassis.pid_wait();
-        chassis.pid_drive_set(-54, 110, true);
-        chassis.pid_wait();
-        chassis.pid_drive_set(-6, 110, true);
-        chassis.pid_wait();
+        
 
         pros::delay(100000);
 
@@ -169,9 +182,9 @@ void initialize() {
         intake_down.move(127);
 
         chassis.pid_drive_set(-36, 127, false);  // Move the majority of the distance to the mogo
-        chassis.pid_wait_quick_chain();
+        chassis.pid_wait();
         chassis.pid_drive_set(-8.5_in, 35, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait_quick();
+        chassis.pid_wait();
 
         mogo.set(true);
         chassis.pid_turn_relative_set(45, 90, false);
@@ -199,17 +212,17 @@ void initialize() {
         pros::delay(850);
         lady_brown.move_absolute(50, 200);
         chassis.pid_drive_set(-11_in, 127, false);  // Move away from wall after alliance stake score
-        chassis.pid_wait_quick();                   // Quick chain into the turn
+        chassis.pid_wait();                   // Quick chain into the turn
         chassis.pid_turn_set(-80, 127, false);      // Turn to mogo
-        chassis.pid_wait_quick();
+        chassis.pid_wait();
         chassis.pid_drive_set(-20_in, 100, false);  // Move the majority of the distance to the mogo
-        chassis.pid_wait_quick_chain();
+        chassis.pid_wait();
         // TODO: CURRENTLY THIS IS PRESET BUT IN THE FUTURE MAKE IT GO BACK UNTIL THE AUTO CLAMP ACTIVATES.
         chassis.pid_drive_set(-16_in, 60, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait_quick();
+        chassis.pid_wait();
         toggle(mogo);
         chassis.pid_turn_set(-170, 110, false);  // Turn to ring stack
-        chassis.pid_wait_quick();
+        chassis.pid_wait();
         intake_up.move(-127); 
         intake_down.move(127);                        // Start intake_up before running into ring stack
         chassis.pid_drive_set(25_in, 80, true);            // Move 18" away from the wall to align for two rings
@@ -225,7 +238,7 @@ void initialize() {
         toggle(swiper);                          // Swiper down
         pros::delay(400);                        // Wait for swiper to settle down
         chassis.pid_drive_set(14_in, 30, true);  // Get rings
-        chassis.pid_wait_quick_chain();
+        chassis.pid_wait();
         chassis.pid_drive_set(-15_in, 60, true);  // Drag them back
         chassis.pid_wait();
         chassis.pid_turn_relative_set(-65, 40, true);  // Turn them away from the left behind red ring and the bar
@@ -247,38 +260,36 @@ void initialize() {
         lady_brown.move_absolute(1900, 200);
         pros::delay(850);
         lady_brown.move_absolute(50, 200);
-        chassis.pid_drive_set(-9_in, 127, false);  // Move away from wall after alliance stake score
-        chassis.pid_wait_quick();                   // Quick chain into the turn
-        chassis.pid_turn_set(80, 127, false);      // Turn to mogo
-        chassis.pid_wait_quick();
-        chassis.pid_drive_set(-20_in, 100, false);  // Move the majority of the distance to the mogo
-        chassis.pid_wait_quick_chain();
+        chassis.pid_drive_set(-10_in, 127, true);  // Move away from wall after alliance stake score
+        chassis.pid_wait();                   // Quick chain into the turn
+        chassis.pid_turn_set(80, 120, false);      // Turn to mogo
+        chassis.pid_wait();
+        chassis.pid_drive_set(-20_in, 100, true);  // Move the majority of the distance to the mogo
+        chassis.pid_wait();
         // TODO: CURRENTLY THIS IS PRESET BUT IN THE FUTURE MAKE IT GO BACK UNTIL THE AUTO CLAMP ACTIVATES.
         chassis.pid_drive_set(-14_in, 60, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait_quick();
-        toggle(mogo);
-        chassis.pid_turn_set(160, 110, false);  // Turn to ring stack
-        chassis.pid_wait_quick();
-        intake_up.move(-127);                         // Start intake_up before running into ring stack
-        chassis.pid_drive_set(25_in, 80, true);            // Move 18" away from the wall to align for two rings
-        chassis.pid_wait(); 
-        if((color_sensor.get_hue() >= 200 && color_sensor.get_hue() <= 220)) pros::delay(500);                          // WAIT FOR RING TO GET INTO INTAKE
-        intake_up.move(0);                                // Stop intake_up to avoid intaking red one when  going towards the wall to line up
-                             // Wait for move_to_distance_from_wall to finish
-        chassis.pid_turn_relative_set(95, 90, true);  // Turn to ring stack
         chassis.pid_wait();
-        intake_up.move(-127);                       // Move intake_up for the rest of the auton
+        toggle(mogo);
+        chassis.pid_turn_set(170, 120, false);  // Turn to ring stack
+        chassis.pid_wait();
+        intake_up.move(-127);
+        intake_down.move(127);                         // Start intake_up before running into ring stack
+        chassis.pid_drive_set(26_in, 80, true);            // Move 18" away from the wall to align for two rings
+        chassis.pid_wait(); 
+
+        chassis.pid_turn_set(260, 120, true);  // Turn to ring stack
+        chassis.pid_wait();
         toggle(swiper);                          // Swiper down
         pros::delay(400);                        // Wait for swiper to settle down
         chassis.pid_drive_set(14_in, 30, true);  // Get rings
-        chassis.pid_wait_quick_chain();
+        chassis.pid_wait();
         chassis.pid_drive_set(-15_in, 60, true);  // Drag them back
         chassis.pid_wait();
-        chassis.pid_turn_relative_set(65, 40, true);  // Turn them away from the left behind red ring and the bar
+        chassis.pid_turn_relative_set(65, 120, true);  // Turn them away from the left behind red ring and the bar
         chassis.pid_wait();
         swiper.set(false);  // Swiper up to intake_up them
         // Move around to intake_up rings
-        chassis.pid_drive_set(32_in, 60, false);
+        chassis.pid_drive_set(35_in, 60, false);
         chassis.pid_wait();
         pros::delay(350);  // Make sure the intake_up finishes scoring.
         intake_up.move(0);
@@ -287,9 +298,9 @@ void initialize() {
 
        jas::jasauton([](){
         chassis.pid_drive_set(-(3 * 12), 127, false);  // Move the majority of the distance to the mogo
-        chassis.pid_wait_quick_chain();
+        chassis.pid_wait();
         chassis.pid_drive_set(-8.5_in, 35, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait_quick();
+        chassis.pid_wait();
 
         mogo.set(true);
         chassis.pid_turn_relative_set(45, 90, false);
@@ -308,19 +319,19 @@ void initialize() {
         chassis.pid_wait();
         mogo.set(true);
         chassis.pid_turn_set(-25, 90, false);
-        chassis.pid_wait_quick();
+        chassis.pid_wait();
         intake_lift.set(!intake_lift.get());
         intake_up.move(-127);
         chassis.pid_drive_set(30_in, 80, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait_quick();
+        chassis.pid_wait();
 
         chassis.pid_drive_set(-8_in, 25, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait_quick_chain();
+        chassis.pid_wait();
         intake_lift.set(!intake_lift.get());
         chassis.pid_drive_set(6_in, 25, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait_quick_chain();
+        chassis.pid_wait();
         chassis.pid_drive_set(6_in, 25, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait_quick_chain();
+        chassis.pid_wait();
         intake_up.move(0);
         chassis.pid_turn_relative_set(35, 90, false);
         chassis.pid_wait();
@@ -335,9 +346,9 @@ void initialize() {
 
               jas::jasauton([](){
         chassis.pid_drive_set(-(3 * 12), 127, false);  // Move the majority of the distance to the mogo
-        chassis.pid_wait_quick_chain();
+        chassis.pid_wait();
         chassis.pid_drive_set(-8.5_in, 35, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait_quick();
+        chassis.pid_wait();
 
         mogo.set(true);
         chassis.pid_turn_relative_set(-45, 90, false);
@@ -356,19 +367,19 @@ void initialize() {
         chassis.pid_wait();
         mogo.set(true);
         chassis.pid_turn_set(25, 90, false);
-        chassis.pid_wait_quick();
+        chassis.pid_wait();
         intake_lift.set(!intake_lift.get());
         intake_up.move(-127);
         chassis.pid_drive_set(30_in, 80, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait_quick();
+        chassis.pid_wait();
 
         chassis.pid_drive_set(-8_in, 25, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait_quick_chain();
+        chassis.pid_wait();
         intake_lift.set(!intake_lift.get());
         chassis.pid_drive_set(6_in, 25, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait_quick_chain();
+        chassis.pid_wait();
         chassis.pid_drive_set(6_in, 25, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait_quick_chain();
+        chassis.pid_wait();
         intake_up.move(0);
         chassis.pid_turn_relative_set(-35, 90, false);
         chassis.pid_wait();
@@ -382,47 +393,44 @@ void initialize() {
        }, 0, 1, "Goal rush AWP", "Testing for red autons", 1, 1, true),
 
        jas::jasauton([](){
-         chassis.pid_drive_set(-(3 * 12), 127, false);  // Move the majority of the distance to the mogo
-        chassis.pid_wait_quick_chain();
-        chassis.pid_drive_set(-8.5_in, 35, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait_quick();
-
+        chassis.pid_drive_set(-46, 127, false);  // Move the majority of the distance to the mogo
+        chassis.pid_wait_until(43);
         mogo.set(true);
-        chassis.pid_turn_relative_set(45, 90, false);
+        chassis.pid_turn_relative_set(45, 120, false);
+        chassis.pid_wait();
         intake_up.move(-127);
-        lady_brown.move_absolute((1875 / 3), 150);
+        pros::delay(300);
+        intake_down.move(127);
+        chassis.pid_drive_set(12, 120, false);
+        intake_up.move(-30);
         chassis.pid_wait();
-        chassis.pid_drive_set(12, 80, false);
-        chassis.pid_wait();
-
-        pros::delay(1000);
-        intake_up.move(0);
-        toggle(mogo);
-        chassis.pid_turn_set(110, 90, false);
+        
+        mogo.set(false);
+        chassis.pid_turn_set(110, 120, false);
         chassis.pid_wait();
         chassis.pid_drive_set(-20_in, 50, true);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait();
         mogo.set(true);
-        chassis.pid_turn_set(-25, 90, false);
-        chassis.pid_wait_quick();
-        intake_lift.set(!intake_lift.get());
+        pros::delay(150);
         intake_up.move(-127);
-        chassis.pid_drive_set(30_in, 80, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait_quick();
-
-        chassis.pid_drive_set(-8_in, 25, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait_quick_chain();
+        pros::delay(300);
+        chassis.pid_turn_set(-25, 120, false);
+        chassis.pid_wait();
+        lady_brown.move_absolute(300, 200);
         intake_lift.set(!intake_lift.get());
-        chassis.pid_drive_set(6_in, 25, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait_quick_chain();
-        chassis.pid_drive_set(6_in, 25, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait_quick_chain();
-        intake_up.move(0);
-        chassis.pid_turn_relative_set(165, 90, false);
+        chassis.pid_drive_set(22_in, 120, true);
+        chassis.pid_wait();
+
+        chassis.pid_drive_set(12_in, 25, true);
+        chassis.pid_wait();
+        intake_lift.set(!intake_lift.get());
+        chassis.pid_turn_relative_set(165, 120, false);
         chassis.pid_wait();
         chassis.pid_drive_set(65_in, 80, true);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait();
-        lady_brown.move_absolute(1775, 200);
+        intake_up.move(0);
+        intake_down.move(0);
+        lady_brown.move_absolute(1700, 200);
         chassis.pid_turn_relative_set(20, 90, false);
         chassis.pid_drive_set(5_in, 80, true);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait();
@@ -438,47 +446,44 @@ void initialize() {
        }, 1, 1, "Goal Rush Elims", "Elims Wall Stake", 1, 1, false),
 
       jas::jasauton([](){
-        chassis.pid_drive_set(-(3 * 12), 127, false);  // Move the majority of the distance to the mogo
-        chassis.pid_wait_quick_chain();
-        chassis.pid_drive_set(-8.5_in, 35, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait_quick();
-
+        chassis.pid_drive_set(-46, 127, false);  // Move the majority of the distance to the mogo
+        chassis.pid_wait_until(43);
         mogo.set(true);
-        chassis.pid_turn_relative_set(-45, 90, false);
+        chassis.pid_turn_relative_set(-45, 120, false);
+        chassis.pid_wait();
         intake_up.move(-127);
-        lady_brown.move_absolute((1875 / 3), 150);
+        pros::delay(300);
+        intake_down.move(127);
+        chassis.pid_drive_set(12, 120, false);
+        intake_up.move(-30);
         chassis.pid_wait();
-        chassis.pid_drive_set(12, 80, false);
-        chassis.pid_wait();
-
-        pros::delay(1000);
-        intake_up.move(0);
-        toggle(mogo);
-        chassis.pid_turn_set(130, 90, false);
+        
+        mogo.set(false);
+        chassis.pid_turn_set(-110, 120, false);
         chassis.pid_wait();
         chassis.pid_drive_set(-20_in, 50, true);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait();
         mogo.set(true);
-        chassis.pid_turn_set(-15, 90, false);
-        chassis.pid_wait_quick();
-        intake_lift.set(!intake_lift.get());
+        pros::delay(150);
         intake_up.move(-127);
-        chassis.pid_drive_set(30_in, 80, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait_quick();
-
-        chassis.pid_drive_set(-8_in, 25, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait_quick_chain();
+        pros::delay(300);
+        chassis.pid_turn_set(25, 120, false);
+        chassis.pid_wait();
+        lady_brown.move_absolute(300, 200);
         intake_lift.set(!intake_lift.get());
-        chassis.pid_drive_set(6_in, 25, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait_quick_chain();
-        chassis.pid_drive_set(6_in, 25, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait_quick_chain();
-        intake_up.move(0);
-        chassis.pid_turn_relative_set(-165, 90, false);
+        chassis.pid_drive_set(22_in, 120, true);
+        chassis.pid_wait();
+
+        chassis.pid_drive_set(12_in, 25, true);
+        chassis.pid_wait();
+        intake_lift.set(!intake_lift.get());
+        chassis.pid_turn_relative_set(-165, 120, false);
         chassis.pid_wait();
         chassis.pid_drive_set(65_in, 80, true);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait();
-        lady_brown.move_absolute(1775, 200);
+        intake_up.move(0);
+        intake_down.move(0);
+        lady_brown.move_absolute(1700, 200);
         chassis.pid_turn_relative_set(-20, 90, false);
         chassis.pid_drive_set(5_in, 80, true);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait();
@@ -492,6 +497,52 @@ void initialize() {
         chassis.pid_wait();
         pros::delay(10000);
        }, 0, 1, "Goal Rush Elims", "Elims Wall Stake", 1, 1, false),
+
+       
+      jas::jasauton([](){
+        swiper.set(true);
+        intake_down.move(127);
+        chassis.pid_drive_set(44, 120, false);  // Move the majority of the distance to the mogo
+        chassis.pid_wait();
+        chassis.pid_turn_relative_set(-30, 120, false);
+        chassis.pid_wait();
+        chassis.pid_drive_set(-24, 120, false);
+        chassis.pid_wait();
+        mogo.set(true);
+        pros::delay(150);
+        swiper.set(false);
+        
+        chassis.pid_turn_relative_set(-40, 120, false);
+        chassis.pid_wait();
+        
+        intake_up.move(-127);
+        chassis.pid_drive_set(24, 120, false);
+        chassis.pid_wait();
+        
+        chassis.pid_turn_relative_set(-135, 120, false);
+        chassis.pid_wait();
+
+        chassis.pid_drive_set(30, 120, false);
+        chassis.pid_wait();
+
+        chassis.pid_turn_relative_set(-30, 120, false);
+        chassis.pid_wait();
+
+        intake_lift.set(!intake_lift.get());
+
+        chassis.pid_drive_set(20, 60, false);
+        chassis.pid_wait();
+
+        intake_lift.set(!intake_lift.get());
+        
+        chassis.pid_turn_relative_set(-180, 120, false);
+        chassis.pid_wait();
+        intake_down.move(0);
+
+        chassis.pid_drive_set(60, 120, false);
+        chassis.pid_wait();
+
+       }, 1, 0, "Ring Rush Elims", "5 Ring", 5, 0, false),
 
       jas::jasauton([]() {
         intake_up.move(-127);
