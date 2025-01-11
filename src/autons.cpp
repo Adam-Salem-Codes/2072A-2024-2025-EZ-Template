@@ -18,7 +18,7 @@ const double D_Ku = 40;
 const double D_Tu = 0.416;
 
 const double T_Ku = 18;
-const double T_Tu = 0.491;
+const double T_Tu = 0.491*2;
 // D_Ku*0.2, 0.33*D_Tu, 0.066*D_Tu*D_Ku
 //  chassis.pid_heading_constants_set(11, 0, 15);
 //  chassis.pid_drive_constants_set(20, 0, 60);
@@ -28,7 +28,7 @@ const double T_Tu = 0.491;
 void default_constants() {
   chassis.pid_heading_constants_set(T_Ku*0.2, 0.33*T_Tu, 0.066*T_Tu*T_Ku);
   chassis.pid_drive_constants_set(D_Ku*0.2, 0.33*D_Tu, 0.066*D_Tu*D_Ku);
-  chassis.pid_turn_constants_set(T_Ku*0.2, 0.40*T_Ku/T_Tu, 0.066*T_Tu*T_Ku);
+  chassis.pid_turn_constants_set(3, 0.05, 20, 15);
   chassis.pid_swing_constants_set(6, 0, 65);
 
   chassis.pid_turn_exit_condition_set(50_ms, 3_deg, 250_ms, 10_deg, 500_ms, 500_ms);

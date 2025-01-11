@@ -143,10 +143,11 @@ int color_sensor_task() {
 int blue_color_sensor_pause_task() {
   int i = 0;
   while (i == 0) {
-    if ((color_sensor.get_hue() >= 220 && color_sensor.get_hue() <= 260) && blue_pause){
+    if ((color_sensor.get_hue() >= 210 && color_sensor.get_hue() <= 230) && blue_pause){
       intake_up.move(0);
       i = 1;
     }
+    pros::delay(5);
   }
   return -1;
 }
@@ -158,6 +159,7 @@ int red_color_sensor_pause_task() {
       intake_up.move(0);
       i = 1;
     }
+    pros::delay(5);
   }
   return -1;
 }
@@ -176,6 +178,7 @@ void initialize() {
   j_auton_selector.jautonpopulate(
       { jas::jasauton([](){
 
+        pros::delay(100000);
         chassis.pid_turn_relative_set(90_deg, 120, false);
         chassis.pid_wait();
         chassis.pid_drive_set(24, 110, true);
@@ -444,70 +447,73 @@ void initialize() {
 
 
        jas::jasauton([](){
-        lady_brown.move_absolute((700),100);
+        theta = 293;
+        
         doinker.set(true);
         intake_down.move(127);
-        intake_up.move(-80);
         
-        chassis.pid_drive_set(33, 127, false);  // Move the majority of the distance to the mogo
-        chassis.pid_wait_until(30);
+        chassis.pid_drive_set(32, 127, false);  // Move the majority of the distance to the mogo
+        chassis.pid_wait_quick();
         doinker.set(false);
-        chassis.pid_wait_quick_chain();
-        pros::Task t1(blue_color_sensor_pause_task);
-        chassis.pid_drive_set(-10, 60, false);  // Move the majority of the distance to the mogo
-        chassis.pid_wait_until(5);
-        doinker.set(true);
-        chassis.pid_wait_quick_chain();
-        doinker.set(false);
-        chassis.pid_turn_relative_set(170, 120, false);
+        pros::delay(100);
+        chassis.pid_drive_set(-12, 90, false);  // Move the majority of the distance to the mogo
         chassis.pid_wait();
-        chassis.pid_drive_set(-8_in, 70, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        doinker.set(true);
+        pros::delay(200);
+        chassis.pid_turn_set(87-theta, 120, false);
+        chassis.pid_wait();
+        doinker.set(false);
+        
+        chassis.pid_drive_set(-10_in, 70, true);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait();
         mogo.set(true);
+        pros::delay(100);
         intake_up.move(-127);
-        pros::delay(200);
+        pros::delay(400);
+        blue_pause = true;
+        mogo.set(false);
+        
+        chassis.pid_drive_set(6_in, 70, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait();
+        chassis.pid_turn_set(180-theta, 120, false);
+        chassis.pid_wait();
+        chassis.pid_drive_set(-26_in, 60, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait();
+        blue_pause = false;
+        mogo.set(true);
+        intake_up.move(-127);
+        chassis.pid_turn_set(135-theta, 120, false);
+        chassis.pid_wait();
+        mogo.set(false);
+        chassis.pid_drive_set(48_in, 120, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait();
+        intake_down.move(127);
+        pros::delay(500);
+        
+        intake_lift.set(true);
+        chassis.drive_set(127, 127);
+        lady_brown.move_absolute(300, 200);
+        pros::delay(1000);
+        intake_lift.set(false);
+        chassis.pid_drive_set(-8_in, 50, false);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait();
+        intake_lift.set(false);
+        chassis.pid_turn_set(265-theta, 120, false);
+        chassis.pid_wait();
+        
+        chassis.pid_drive_set(44_in, 100, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait();
+        chassis.pid_turn_set(240-theta, 120, false);
+        chassis.pid_wait();
+        intake_up.move(0);
+        lady_brown.move_absolute(1600, 200);
+        chassis.pid_drive_set(6_in, 120, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait();
+
+
         pros::delay(100000);
 
-        mogo.set(true);
-        chassis.pid_turn_relative_set(45, 90, false);
-        intake_up.move(-127);
-        lady_brown.move_absolute((1875 / 3), 150);
-        chassis.pid_wait();
-        chassis.pid_drive_set(12, 80, false);
-        chassis.pid_wait();
-
-        pros::delay(1000);
-        intake_up.move(0);
-        toggle(mogo);
-        chassis.pid_turn_set(110, 90, false);
-        chassis.pid_wait();
-        chassis.pid_drive_set(-20_in, 50, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait();
-        mogo.set(true);
-        chassis.pid_turn_set(-25, 90, false);
-        chassis.pid_wait();
-        intake_lift.set(!intake_lift.get());
-        intake_up.move(-127);
-        chassis.pid_drive_set(30_in, 80, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait();
-
-        chassis.pid_drive_set(-8_in, 25, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait();
-        intake_lift.set(!intake_lift.get());
-        chassis.pid_drive_set(6_in, 25, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait();
-        chassis.pid_drive_set(6_in, 25, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait();
-        intake_up.move(0);
-        chassis.pid_turn_relative_set(35, 90, false);
-        chassis.pid_wait();
-        chassis.pid_drive_set(10_in, 80, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait();
-        lady_brown.move_absolute(1875, 200);
-        pros::delay(500);
-        chassis.pid_drive_set(-12, 127, true);
-        chassis.pid_wait();
-        pros::delay(10000);
+        
        }, 1, 1, "FAST Goal Rush", "Testing for blue autons", 1, 1, true),
 
               jas::jasauton([](){
