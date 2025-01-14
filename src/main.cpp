@@ -1104,18 +1104,19 @@ void initialize() {
         chassis.pid_wait();
         chassis.pid_drive_set(6_in, 80, true);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait();
-       }, 2, 2, "Skills", "Skills", 6, 6, true)});
+      }, 2, 2, "Skills", "Skills", 6, 6, true),
 
-             jas::jasauton([](){
+      jas::jasauton([](){
         chassis.pid_drive_set(30_in, 120, true);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait();
 
-       }, 2, 2, "MOVE", "MOVE", 5, 0, false),
-       jas::jasauton([](){
+        }, 2, 2, "MOVE", "MOVE", 5, 0, false),
+
+      jas::jasauton([](){
         chassis.pid_drive_set(3_in, 120, true);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait();
 
-       }, 2, 2, "MOVE Small", "MOVE Small", 5, 0, false),
+       }, 2, 2, "MOVE Small", "MOVE Small", 5, 0, false)});
   // Configure your chassis controls
   chassis.opcontrol_curve_buttons_toggle(true);  // Enables modifying the controller curve with buttons on the joysticks
   chassis.opcontrol_drive_activebrake_set(0);    // Sets the active brake kP. We recommend ~2.  0 will disable.
