@@ -134,17 +134,23 @@ void move_until_clamped(int speed, int lower_speed, int distance) {
 bool racism_against_blue = false;
 int color_sensor_task() {
   int color = 100;
-  color = color_sensor.get_hue();
+  
   while (true) {
+    color = color_sensor.get_hue();
     if (blue_pause){
-      
       if (color >= 200 && color <= 240){
+        intake_up.move(50);
+        pros::delay(100);
         intake_up.move(0);
+        blue_pause = false;
       }
     }
     if (red_pause){
-      if (color >= 0 && color <= 15){
+      if (color >= 0 && color <= 20){
+        intake_up.move(50);
+        pros::delay(100);
         intake_up.move(0);
+        red_pause = false;
       }
     }
     if (color_sort_blue){
@@ -156,7 +162,7 @@ int color_sensor_task() {
       }
     }
     if (color_sort_red){
-      if (color >= 200 && color <= 240) {
+      if (color >= 0 && color <= 20) {
         pros::delay(100);
         intake_up.move(50);
         pros::delay(100);
@@ -418,12 +424,12 @@ void initialize() {
         intake_up.move(-100);
         intake_down.move(127);  
         chassis.pid_drive_set(44_in, 120, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait_quick();
+        chassis.pid_wait_quick_chain();
         chassis.pid_drive_set(-4_in, 120, true);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait_quick();
         chassis.pid_turn_set(0-theta, 120, false);      // Turn to mogo
         chassis.pid_wait_quick();
-        chassis.pid_drive_set(-18_in, 120, true);  // Move the majority of the distance to the mogo
+        chassis.pid_drive_set(-14_in, 120, true);  // Move the majority of the distance to the mogo
         chassis.pid_wait_quick_chain();
         chassis.pid_drive_set(-8_in, 40, false);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait_quick();
@@ -441,26 +447,26 @@ void initialize() {
         chassis.pid_wait_quick();
         chassis.pid_turn_set(-180-theta, 120, false);  // Turn to ring stack
         chassis.pid_wait_quick();
-        chassis.pid_drive_set(52_in, 90, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait();
+        chassis.pid_drive_set(54_in, 90, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait_quick();
         chassis.pid_turn_set(-90-theta, 120, false);  // Turn to ring stack
-        chassis.pid_wait();
-        chassis.pid_drive_set(-14_in, 120, true);  // Move the majority of the distance to the mogo
+        chassis.pid_wait_quick();
+        chassis.pid_drive_set(-10_in, 120, true);  // Move the majority of the distance to the mogo
         chassis.pid_wait_quick_chain();
-        chassis.pid_drive_set(-8_in, 40, false);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_drive_set(-8_in, 0, false);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait_quick();
         mogo.set(true);
         blue_pause = false;
         pros::delay(100);
-        chassis.pid_turn_set(-185-theta, 120, false);  // Turn to ring stack
+        chassis.pid_turn_set(-190-theta, 120, false);  // Turn to ring stack
         chassis.pid_wait_quick();
         intake_up.move(-127);
         chassis.pid_drive_set(26_in, 120, true);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait_quick();
 
         chassis.pid_turn_set(-160-theta, 120, false);  // Turn to ring stack
-        chassis.pid_drive_set(-44_in, 120, true);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait_until(-20);
+        chassis.pid_drive_set(-43_in, 120, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait_until(-30);
 
         intake_up.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
         intake_up.move(0);
@@ -476,7 +482,7 @@ void initialize() {
         
         chassis.drive_brake_set(pros::E_MOTOR_BRAKE_HOLD);
         lady_brown.set_zero_position_all(0);
-        pros::delay(2000);
+        pros::delay(1000);
 
         lady_brown.move_absolute(1900, 200);
         pros::delay(750);
@@ -501,13 +507,11 @@ void initialize() {
         mogo.set(true);
         blue_pause = false;
         pros::delay(200);
-        intake_up.move(-127);
-        pros::delay(400);
-        mogo.set(false);
-        color_sort_red = true;
 
+        color_sort_red = true;
         chassis.pid_turn_set(-45-theta, 120, false);  // Turn to ring stack
         chassis.pid_wait_quick();
+        intake_up.move(-127);
 
         chassis.pid_drive_set(48_in, 120, true);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait();
@@ -517,13 +521,18 @@ void initialize() {
         intake_lift.set(true);
         pros::delay(200);
         chassis.drive_set(80, 80);
-        pros::delay(1000);
+        pros::delay(400);
         intake_lift.set(false);
-        chassis.pid_drive_set(-8_in, 50, false);  // Slow down before reaching the mobile goal to clamp correctly.
-        chassis.pid_wait();
-        intake_lift.set(false);
+        pros::delay(400);
+        chassis.drive_set(0, 0);
+        pros::delay(800);
+        chassis.pid_drive_set(-16_in, 40, false);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait_quick();
+        chassis.pid_drive_set(8_in, 40, false);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_wait_quick();
 
-        chassis.pid_drive_set(-56_in, 120, true);  // Slow down before reaching the mobile goal to clamp correctly.
+        chassis.pid_turn_set(-40-theta, 120, false);
+        chassis.pid_drive_set(-70_in, 100, true);
         chassis.pid_wait_until(-20);
 
         intake_up.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
@@ -1199,6 +1208,11 @@ void opcontrol() {
   intake_up.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
   swiper.set(false);
   lady_brown.move_absolute(0, 200);
+  red_pause = false;
+  blue_pause = false;
+  auto_clamp = false;
+  color_sort_blue = false;
+  color_sort_red = false;
   
   // l_lift.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
   // r_lift.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
@@ -1245,11 +1259,12 @@ void opcontrol() {
 
       if (master.get_digital_new_press(DIGITAL_R1)){
         if (!mogo.get()){
-          if (front_distance.get() < 35){
+          if (clamp_sensor.get() < 35){
             mogo.set(true);
           }
+        } else {
+          mogo.set(false);
         }
-        mogo.set(false);
       }
       if (master.get_digital_new_press(DIGITAL_UP))
         swiper.set(!swiper.get());
