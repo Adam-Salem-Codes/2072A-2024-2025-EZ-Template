@@ -189,7 +189,85 @@ void initialize() {
   lift.reset();
   lift.reset_position();
   j_auton_selector.jautonpopulate(
-      { jas::jasauton([](){
+      { 
+        jas::jasauton([]() {
+        theta = 192;
+        
+        chassis.drive_brake_set(pros::E_MOTOR_BRAKE_HOLD);
+        lady_brown.set_zero_position_all(0);
+        pros::delay(1000);
+
+        lady_brown.move_absolute(1900, 200);
+        pros::delay(750);
+        lady_brown.move_absolute(50, 200);
+        chassis.pid_turn_set(-42, 90, false);
+        chassis.pid_wait();
+        chassis.pid_drive_set(-12, 50, false, false);
+        chassis.pid_wait();
+        mogo.set(true);
+        chassis.pid_turn_set(100, 90, true); // turn to ring
+        chassis.pid_wait();
+        intake_up.move(-127);
+        intake_down.move(127);
+        chassis.pid_drive_set(24, 90, true, false);
+        chassis.pid_wait_quick_chain();
+        chassis.pid_drive_set(10, 40, true, false);
+        chassis.pid_wait();
+        chassis.pid_turn_set(160, 90, false);
+        chassis.pid_wait();
+        chassis.pid_drive_set(24, 90, true, false);
+        chassis.pid_wait_quick_chain();
+        chassis.pid_drive_set(11, 40, true, false);
+        chassis.pid_wait();
+        chassis.pid_turn_set(-70, 100, true); // turn to two red rings
+        chassis.pid_wait();
+        chassis.pid_drive_set(12*3, 70, true, false);
+        chassis.pid_wait_quick_chain();
+        chassis.pid_drive_set(24, 25, true, false);
+        chassis.pid_wait_quick_chain();
+        pros::delay(1000);
+        chassis.pid_turn_set(-206, 90, false);
+        chassis.pid_wait();
+        chassis.pid_drive_set(12, 40, true, false);
+        chassis.pid_wait();
+        pros::delay(500);
+        chassis.pid_drive_set(-6, 40, true, false);
+        chassis.pid_wait();
+        chassis.pid_turn_set(-305, 90, false);
+        chassis.pid_wait();
+        mogo.set(false);
+        chassis.pid_drive_set(-5, 40, true, false);
+        chassis.pid_wait_quick();
+        intake_down.move(127);
+        intake_up.move(0);
+        chassis.pid_drive_set(5.55*12, 127, false, true);
+        chassis.pid_wait();
+        red_pause = true;
+        intake_up.move(-90);
+        chassis.pid_drive_set(13, 30, false, true);
+        chassis.pid_wait();
+        chassis.pid_turn_relative_set(-90, 90, false);
+        chassis.pid_wait();
+        pros::delay(1000);
+        intake_up.move(0);
+        chassis.pid_drive_set(12*3.5, 50, false, true);
+        chassis.pid_wait();
+        chassis.pid_turn_set(-290, 90, false);
+        chassis.pid_wait();
+        chassis.pid_drive_set(-16, 50, false, true);
+        chassis.pid_wait();
+        mogo.set(true);
+        pros::delay(1000);
+        intake_up.move(-127);
+        pros::delay(500);
+        chassis.pid_turn_set(-305, 90, false);
+        chassis.pid_wait();
+        chassis.pid_drive_set(24, 30, false, true);
+        chassis.pid_wait();
+        pros::delay(5000);
+      }, 2, 2, "TEST SKILLS", "TEST SKILLS", 6, 6, true),
+        
+        jas::jasauton([](){
 
 
 
@@ -1611,7 +1689,8 @@ jas::jasauton([]() {
         chassis.pid_drive_set(3_in, 120, true);  // Slow down before reaching the mobile goal to clamp correctly.
         chassis.pid_wait();
 
-       }, 2, 2, "MOVE Small", "MOVE Small", 5, 0, false)});
+       }, 2, 2, "MOVE Small", "MOVE Small", 5, 0, false)
+       });
   // Configure your chassis controls
   chassis.opcontrol_curve_buttons_toggle(true);  // Enables modifying the controller curve with buttons on the joysticks
   chassis.opcontrol_drive_activebrake_set(0);    // Sets the active brake kP. We recommend ~2.  0 will disable.
