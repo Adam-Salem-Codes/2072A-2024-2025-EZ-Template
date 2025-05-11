@@ -1,7 +1,7 @@
 {
   "py/object": "pros.conductor.project.Project",
   "py/state": {
-    "project_name": "2072A",
+    "project_name": "22192X Worlds",
     "target": "v5",
     "templates": {
       "EZ-Template": {
@@ -421,7 +421,7 @@
       }
     },
     "upload_options": {
-      "description": "2072A Ares EZ-Template",
+      "description": "22192X Worlds",
       "after": "run",
       "icon": "X"
     },
